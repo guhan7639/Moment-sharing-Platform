@@ -1,0 +1,10 @@
+deepface
+fastapi
+uvicorn
+pymongo
+opencv-python
+numpy
+python-dotenv
+python-multipart
+tf-keras
+face-recognition
