@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Calendar, MapPin, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { formatImageUrl } from '../utils/imageUtils';
+
 
 const PhotographerDashboard = () => {
     const [events, setEvents] = useState([]);
@@ -86,9 +88,10 @@ const PhotographerDashboard = () => {
                     
                     return (
                         <div key={event._id} className="glass card-hover rounded-3xl overflow-hidden border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-slate-900/40 flex flex-col group relative">
-                            {event.bannerImage ? (
-                                <img src={`http://localhost:5000/${event.bannerImage}`} alt={event.eventName} className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500" />
-                            ) : (
+                             {event.bannerImage ? (
+                                 <img src={formatImageUrl(event.bannerImage)} alt={event.eventName} className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500" />
+                             ) : (
+
                                 <div className="w-full h-48 bg-gradient-to-br from-violet-900/40 to-indigo-900/40 flex items-center justify-center">
                                     <Calendar className="w-12 h-12 text-violet-500/50" />
                                 </div>

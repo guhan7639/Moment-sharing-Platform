@@ -91,12 +91,22 @@ router.post('/:eventId', upload.single('image'), async (req, res) => {
         try {
             pythonRes = await axios.post(pythonUrl, formData, {
                 headers: { ...formData.getHeaders() },
-                timeout: 10000 // 10s timeout prevents hanging
+                timeout: 30000 // Increased timeout for heavy ML tasks if needed, but 30s is safe
             });
+
+            // Check if Python service returned a logical error (success: false)
+            if (pythonRes.data && pythonRes.data.success === false) {
+                console.warn(`[FaceMatch] Python Service Error: ${pythonRes.data.error}`);
+                return res.status(400).json({ 
+                    success: false, 
+                    error: pythonRes.data.error || 'Face recognition failed' 
+                });
+            }
         } catch (apiError) {
-            console.error(`[FaceMatch] Python Service Error: ${apiError.message}`);
-            // Use a specific error message so client knows it's an internal service issue
-            throw new Error('Face recognition service is unavailable or timed out.');
+            console.error(`[FaceMatch] API Connection Error: ${apiError.message}`);
+            const status = apiError.response?.status || 500;
+            const message = apiError.response?.data?.error || apiError.message || 'Face recognition service error';
+            return res.status(status).json({ success: false, error: message });
         }
 
         const targetEmbedding = pythonRes.data.embedding;
@@ -104,8 +114,9 @@ router.post('/:eventId', upload.single('image'), async (req, res) => {
         // Validate Embedding from Python
         if (!Array.isArray(targetEmbedding) || targetEmbedding.length === 0) {
             console.error('[FaceMatch] Invalid embedding received from Python:', pythonRes.data);
-            throw new Error('Could not extract face embedding from uploaded image.');
+            return res.status(400).json({ success: false, error: 'Could not extract face embedding from uploaded image.' });
         }
+
         console.log(`[FaceMatch] Target embedding extracted (Length: ${targetEmbedding.length})`);
 
         // -- Database Matching --

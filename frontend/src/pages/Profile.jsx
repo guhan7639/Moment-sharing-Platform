@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BASE_URL } from '../constants';
+import { formatImageUrl } from '../utils/imageUtils';
+
 
 const Profile = () => {
     const { user, setUser } = useAuth();
@@ -143,12 +145,13 @@ const Profile = () => {
                 <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
                     <div className="relative group cursor-pointer" onClick={handlePhotoClick}>
                         <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-rose-500/20 shadow-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center relative">
-                            {formData.profilePhoto || user.profilePhoto ? (
-                                <img 
-                                    src={(formData.profilePhoto || user.profilePhoto).startsWith('http') ? (formData.profilePhoto || user.profilePhoto) : `${BASE_URL}${formData.profilePhoto || user.profilePhoto}`} 
-                                    alt={user.name} 
-                                    className="w-full h-full object-cover" 
-                                />
+                             {formData.profilePhoto || user.profilePhoto ? (
+                                 <img 
+                                     src={formatImageUrl(formData.profilePhoto || user.profilePhoto)} 
+                                     alt={user.name} 
+                                     className="w-full h-full object-cover" 
+                                 />
+
                             ) : (
                                 <UserIcon size={64} className="text-slate-400" />
                             )}

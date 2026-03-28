@@ -4,11 +4,15 @@ import api from '../services/api';
 import { Calendar, MapPin, Upload, Image as ImageIcon, CheckCircle2, ArrowLeft, Clock, Grid, Share2, Download, Edit, Trash2, XCircle, Camera, Star, Briefcase, Phone, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import QRCode from 'react-qr-code';
+import { formatImageUrl } from '../utils/imageUtils';
+
 
 const EventDetails = () => {
     const { id } = useParams();
     const [event, setEvent] = useState(null);
+    const [photos, setPhotos] = useState([]);
     const [photosCount, setPhotosCount] = useState(0);
+
     const [showQR, setShowQR] = useState(false);
     const [error, setError] = useState(null);
     const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -23,7 +27,9 @@ const EventDetails = () => {
                     api.get(`/photos/event/${id}`)
                 ]);
                 setEvent(eventRes.data);
+                setPhotos(photosRes.data);
                 setPhotosCount(photosRes.data.length);
+
             } catch (err) {
                 console.error('Fetch error:', err);
                 setError(err.response?.status === 403 ? 'Unauthorized' : 'Not Found');
@@ -173,10 +179,11 @@ const EventDetails = () => {
                                 <div className="relative">
                                     <div className="absolute inset-0 bg-emerald-500 rounded-full blur-xl opacity-20"></div>
                                     <img 
-                                        src={event.bookedPhotographer.profilePhoto || "https://ui-avatars.com/api/?name=" + event.bookedPhotographer.name + "&background=10b981&color=fff"} 
+                                        src={event.bookedPhotographer.profilePhoto ? formatImageUrl(event.bookedPhotographer.profilePhoto) : "https://ui-avatars.com/api/?name=" + event.bookedPhotographer.name + "&background=10b981&color=fff"} 
                                         alt={event.bookedPhotographer.name} 
                                         className="w-24 h-24 rounded-full object-cover border-4 border-emerald-500 relative z-10"
                                     />
+
                                     <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white p-1.5 rounded-full relative z-10">
                                         <CheckCircle2 size={16} />
                                     </div>
@@ -208,10 +215,11 @@ const EventDetails = () => {
                                         <div key={app.photographer._id} className="glass bg-white/50 dark:bg-slate-900/40 p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-xl flex flex-col hover:border-violet-500/30 transition-colors group">
                                             <div className="flex items-start gap-4 mb-4">
                                                 <img 
-                                                    src={app.photographer.profilePhoto || "https://ui-avatars.com/api/?name=" + app.photographer.name + "&background=8b5cf6&color=fff"} 
+                                                    src={app.photographer.profilePhoto ? formatImageUrl(app.photographer.profilePhoto) : "https://ui-avatars.com/api/?name=" + app.photographer.name + "&background=8b5cf6&color=fff"} 
                                                     alt={app.photographer.name} 
                                                     className="w-16 h-16 rounded-full object-cover border-2 border-white/10 group-hover:border-violet-500 transition-colors"
                                                 />
+
                                                 <div className="flex-1">
                                                     <h4 className="text-lg font-bold leading-tight text-slate-900 dark:text-white">{app.photographer.name}</h4>
                                                     {app.photographer.experience && (
@@ -232,7 +240,8 @@ const EventDetails = () => {
                                                     <div className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-2">Portfolio Preview</div>
                                                     <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                                                         {app.photographer.portfolioPhotos.slice(0, 3).map((photoUrl, idx) => (
-                                                            <img key={idx} src={photoUrl} alt="Portfolio" className="w-16 h-16 rounded-xl object-cover shrink-0 opacity-80 group-hover:opacity-100 transition-opacity" />
+                                                            <img key={idx} src={formatImageUrl(photoUrl)} alt="Portfolio" className="w-16 h-16 rounded-xl object-cover shrink-0 opacity-80 group-hover:opacity-100 transition-opacity" />
+
                                                         ))}
                                                     </div>
                                                 </div>
@@ -304,16 +313,21 @@ const EventDetails = () => {
                             </div>
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                            {/* Grid preview placeholders/logic can be added here */}
-                            <div className="aspect-square bg-slate-100 dark:bg-white/5 rounded-3xl border border-slate-200 dark:border-white/5 flex items-center justify-center text-slate-400 dark:text-slate-800">
-                                <ImageIcon size={32} />
-                            </div>
-                            <div className="aspect-square bg-slate-100 dark:bg-white/5 rounded-3xl border border-slate-200 dark:border-white/5 flex items-center justify-center text-slate-400 dark:text-slate-800">
-                                <ImageIcon size={32} />
-                            </div>
-                            <div className="aspect-square bg-slate-100 dark:bg-white/5 rounded-3xl border border-slate-200 dark:border-white/5 flex items-center justify-center text-slate-400 dark:text-slate-800">
-                                <ImageIcon size={32} />
-                            </div>
+                            {photos.slice(0, 3).map((photo, idx) => (
+                                <div key={photo._id || idx} className="aspect-square bg-slate-100 dark:bg-white/5 rounded-3xl border border-slate-200 dark:border-white/5 overflow-hidden">
+                                    <img 
+                                        src={formatImageUrl(photo.imageUrl)} 
+                                        alt={`Event photo ${idx + 1}`} 
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                            ))}
+                            {[...Array(Math.max(0, 3 - photos.length))].map((_, i) => (
+                                <div key={`placeholder-${i}`} className="aspect-square bg-slate-100 dark:bg-white/5 rounded-3xl border border-slate-200 dark:border-white/5 flex items-center justify-center text-slate-400 dark:text-slate-800">
+                                    <ImageIcon size={32} />
+                                </div>
+                            ))}
+
                             {canManageSet ? (
                                 <div className="aspect-square bg-slate-200 dark:bg-white/10 rounded-3xl border border-slate-300 dark:border-white/20 flex flex-col items-center justify-center text-rose-500 group cursor-pointer hover:bg-rose-500/20 transition-all">
                                     <Link to={`/upload/${id}`} className="flex flex-col items-center">

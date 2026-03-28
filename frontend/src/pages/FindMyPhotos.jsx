@@ -2,6 +2,8 @@ import { useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 import { Camera, Upload, ArrowLeft, Search, Image as ImageIcon, Sparkles, Loader2 } from 'lucide-react';
+import { formatImageUrl } from '../utils/imageUtils';
+
 
 const FindMyPhotos = () => {
     const { eventId } = useParams();
@@ -156,9 +158,10 @@ const FindMyPhotos = () => {
                                         }`}
                                         style={{ animationDelay: `${index * 50}ms` }}
                                     >
-                                        <img 
-                                            src={`http://localhost:5000/${photo.imageUrl}`} 
-                                            alt="Matched moment"
+                                         <img 
+                                             src={formatImageUrl(photo.imageUrl)} 
+                                             alt="Matched moment"
+
                                             className="w-full h-72 object-cover transition-transform duration-700 group-hover:scale-110"
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-6">
@@ -168,9 +171,10 @@ const FindMyPhotos = () => {
                                                         Match Confidence: {Math.round(photo.matchConfidence * 100)}%
                                                     </span>
                                                 )}
-                                                <a 
-                                                    href={`http://localhost:5000/${photo.imageUrl}`} 
-                                                    target="_blank" 
+                                                 <a 
+                                                     href={formatImageUrl(photo.imageUrl)} 
+                                                     target="_blank" 
+ 
                                                     rel="noopener noreferrer"
                                                     className="p-2 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-sm transition-colors text-white"
                                                 >

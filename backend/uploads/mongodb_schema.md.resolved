@@ -1,0 +1,188 @@
+# MongoDB Schema for Moment-sharing Platform
+
+Based on the existing implementation, here is the clean MongoDB schema design.
+
+## 1. Collections & Document Structure
+
+### `users` Collection
+Stores information about all participants (Admins, Users, Hosts, Photographers).
+
+```json
+{
+  "_id": "ObjectId",
+  "name": "String",
+  "username": "String (unique)",
+  "email": "String (unique, optional)",
+  "password": "String (hashed)",
+  "role": "String (admin|user|host|photographer)",
+  "qrCode": "String (Data URL)",
+  "bio": "String",
+  "phone": "String",
+  "profilePhoto": "String (URL)",
+  "experience": "String",
+  "portfolioPhotos": ["String (URL)"],
+  "rating": "Number",
+  "createdAt": "ISODate"
+}
+```
+
+### `events` Collection
+Stores event details and management logic.
+
+```json
+{
+  "_id": "ObjectId",
+  "eventName": "String",
+  "eventDescription": "String",
+  "eventLocation": "String",
+  "eventDate": "String",
+  "category": "String (Wedding|Birthday|Corporate|College|Other)",
+  "bannerImage": "String (URL)",
+  "status": "String (Pending|Approved|Rejected)",
+  "createdBy": "ObjectId (ref: users)",
+  "photographersApplied": [
+    {
+      "photographer": "ObjectId (ref: users)",
+      "status": "String (Pending|Booked|Not Selected)"
+    }
+  ],
+  "bookedPhotographer": "ObjectId (ref: users)",
+  "createdAt": "ISODate"
+}
+```
+
+### `photos` Collection
+Stores uploaded event photos and their associated face recognition data.
+
+```json
+{
+  "_id": "ObjectId",
+  "eventId": "ObjectId (ref: events)",
+  "imageUrl": "String (URL)",
+  "faces": [
+    {
+      "box": {
+        "top": "Number",
+        "right": "Number",
+        "bottom": "Number",
+        "left": "Number"
+      },
+      "embedding": ["Number"]
+    }
+  ],
+  "uploadedAt": "ISODate"
+}
+```
+
+---
+
+## 2. Embedding vs. Referencing
+
+### **Referencing (Current Approach)**
+- **User in Events**: Used for `createdBy`, `photographersApplied`, and `bookedPhotographer`.
+  - *Why*: Users are independent entities. Many events can reference the same user (photographer or host).
+- **Event in Photos**: Each photo references its `eventId`.
+  - *Why*: An event can have thousands of photos. Embedding all photos inside an `event` document would quickly hit the 16MB BSON limit and lead to poor performance.
+
+### **Embedding**
+- **Faces in Photos**: `faces` are embedded directly within the photo document.
+  - *Why*: Face data is specific to a single image and doesn't exist independently. It's always retrieved with the photo.
+- **Photographers in Events (Hybrid)**: The `photographersApplied` array embeds the *status* alongside the reference.
+  - *Why*: This allows tracking the application lifecycle without needing a separate `applications` collection.
+
+---
+
+## 3. Sample JSON Documents
+
+### User (Photographer)
+```json
+{
+  "_id": "65f1a2b3c4d5e6f7a8b9c001",
+  "name": "John Doe",
+  "username": "johndoe_photo",
+  "email": "john@example.com",
+  "role": "photographer",
+  "experience": "5 years",
+  "rating": 4.8,
+  "createdAt": "2024-03-13T10:00:00Z"
+}
+```
+
+### Event
+```json
+{
+  "_id": "65f1a2b3c4d5e6f7a8b9c002",
+  "eventName": "Tech Conference 2024",
+  "category": "Corporate",
+  "createdBy": "65f1a2b3c4d5e6f7a8b9c003",
+  "photographersApplied": [
+    { "photographer": "65f1a2b3c4d5e6f7a8b9c001", "status": "Booked" }
+  ],
+  "bookedPhotographer": "65f1a2b3c4d5e6f7a8b9c001",
+  "status": "Approved"
+}
+```
+
+### Photo (with Face Metadata)
+```json
+{
+  "_id": "65f1a2b3c4d5e6f7a8b9c004",
+  "eventId": "65f1a2b3c4d5e6f7a8b9c002",
+  "imageUrl": "/uploads/photos/photo-123.jpg",
+  "faces": [
+    {
+      "box": { "top": 120, "right": 340, "bottom": 380, "left": 80 },
+      "embedding": [0.12, -0.45, 0.78, ...]
+    }
+  ]
+}
+
+---
+
+## 4. Mongoose Models
+
+Here are the Mongoose models used to interact with these collections.
+
+### User Model (`User.js`)
+```javascript
+const mongoose = require('mongoose');
+const userSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    username: { type: String, required: true, unique: true },
+    role: { type: String, enum: ['admin', 'user', 'host', 'photographer'], default: 'user' },
+    email: { type: String, unique: true, sparse: true },
+    password: { type: String, required: true },
+    profilePhoto: { type: String },
+    portfolioPhotos: [{ type: String }],
+    createdAt: { type: Date, default: Date.now }
+});
+module.exports = mongoose.model('User', userSchema);
+```
+
+### Event Model (`Event.js`)
+```javascript
+const mongoose = require('mongoose');
+const eventSchema = new mongoose.Schema({
+    eventName: { type: String, required: true },
+    category: { type: String, required: true },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    bookedPhotographer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    status: { type: String, default: 'Pending' }
+});
+module.exports = mongoose.model('Event', eventSchema);
+```
+
+### Photo Model (`Photo.js`)
+```javascript
+const mongoose = require('mongoose');
+const photoSchema = new mongoose.Schema({
+    eventId: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
+    imageUrl: { type: String, required: true },
+    faces: [{
+        box: { top: Number, right: Number, bottom: Number, left: Number },
+        embedding: [Number]
+    }],
+    uploadedAt: { type: Date, default: Date.now }
+});
+module.exports = mongoose.model('Photo', photoSchema);
+```

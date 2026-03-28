@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { Plus, Trash2, Edit, ExternalLink, Calendar, MapPin, Users, Image as ImageIcon, LayoutGrid, Search, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { formatImageUrl } from '../utils/imageUtils';
+
 
 const AdminDashboard = () => {
     const [events, setEvents] = useState([]);
@@ -125,8 +127,9 @@ const AdminDashboard = () => {
                                             <div className="flex items-center gap-6">
                                                 <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-900 overflow-hidden shrink-0 shadow-2xl ring-2 ring-slate-200 dark:ring-white/5 group-hover:ring-amber-500/30 transition-all flex items-center justify-center text-slate-400 dark:text-slate-600">
                                                     {event.bannerImage ? (
-                                                        <img src={`http://localhost:5000/${event.bannerImage}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" />
+                                                        <img src={formatImageUrl(event.bannerImage)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" />
                                                     ) : (
+
                                                         <ImageIcon size={24} />
                                                     )}
                                                 </div>
@@ -198,11 +201,12 @@ const AdminDashboard = () => {
                                     <td className="px-10 py-8">
                                         <div className="flex items-center gap-6">
                                             <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-900 overflow-hidden shrink-0 shadow-2xl ring-2 ring-slate-200 dark:ring-white/5 group-hover:ring-rose-500/30 transition-all">
-                                                <img
-                                                    src={event.bannerImage ? `http://localhost:5000/${event.bannerImage}` : 'https://images.unsplash.com/photo-1492684225110-28f0e9a4c6b9?auto=format&fit=crop&q=80&w=2070'}
-                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                                                    alt=""
-                                                />
+                                                 <img
+                                                     src={event.bannerImage ? formatImageUrl(event.bannerImage) : 'https://images.unsplash.com/photo-1492684225110-28f0e9a4c6b9?auto=format&fit=crop&q=80&w=2070'}
+                                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                                     alt=""
+                                                 />
+
                                             </div>
                                             <div>
                                                 <div className="font-black text-xl flex items-center gap-3 text-slate-900 dark:text-white group-hover:text-rose-500 dark:group-hover:text-rose-400 transition-colors">
